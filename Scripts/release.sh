@@ -31,6 +31,10 @@ rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$RES_DIR"
 cp ".build/release/${BIN_NAME}" "${MACOS_DIR}/${BIN_NAME}"
 
+if [ -f "$ROOT/Resources/AppIcon.icns" ]; then
+    cp "$ROOT/Resources/AppIcon.icns" "$RES_DIR/AppIcon.icns"
+fi
+
 cat > "$CONTENTS/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -40,6 +44,7 @@ cat > "$CONTENTS/Info.plist" <<PLIST
     <key>CFBundleName</key>                <string>${BIN_NAME}</string>
     <key>CFBundleDisplayName</key>         <string>${APP_NAME}</string>
     <key>CFBundleExecutable</key>          <string>${BIN_NAME}</string>
+    <key>CFBundleIconFile</key>            <string>AppIcon</string>
     <key>CFBundleVersion</key>             <string>${VERSION}</string>
     <key>CFBundleShortVersionString</key>  <string>${VERSION}</string>
     <key>CFBundlePackageType</key>         <string>APPL</string>
