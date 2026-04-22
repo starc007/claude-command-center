@@ -9,3 +9,4 @@ xcuserdata/
 .vscode/
 .idea/
 build/
+dist/
