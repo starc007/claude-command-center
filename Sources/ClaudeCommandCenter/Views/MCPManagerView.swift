@@ -3,6 +3,7 @@ import SwiftUI
 @MainActor
 final class MCPManagerViewModel: ObservableObject {
     @Published var servers: [MCPServer] = []
+    @Published var logs: [String: MCPLogSnapshot] = [:]  // server.name -> snapshot
     @Published var isLoading = false
 
     func load() {
@@ -13,6 +14,21 @@ final class MCPManagerViewModel: ObservableObject {
             }.value
             self?.servers = list
             self?.isLoading = false
+            self?.loadLogs(for: list)
+        }
+    }
+
+    private func loadLogs(for servers: [MCPServer]) {
+        let names = Array(Set(servers.map(\.name)))
+        Task { [weak self] in
+            let snaps = await Task.detached(priority: .utility) { () -> [String: MCPLogSnapshot] in
+                var out: [String: MCPLogSnapshot] = [:]
+                for name in names {
+                    out[name] = MCPLogReader.snapshot(forServerNamed: name)
+                }
+                return out
+            }.value
+            self?.logs = snaps
         }
     }
 
@@ -43,6 +59,7 @@ final class MCPManagerViewModel: ObservableObject {
 struct MCPManagerView: View {
     @StateObject private var vm = MCPManagerViewModel()
     @State private var expandedID: String?
+    @State private var showingAddSheet = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -67,6 +84,9 @@ struct MCPManagerView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Theme.Colors.background)
         .onAppear { vm.load() }
+        .sheet(isPresented: $showingAddSheet) {
+            AddMCPServerSheet { vm.load() }
+        }
     }
 
     private var header: some View {
@@ -80,6 +100,18 @@ struct MCPManagerView: View {
                     .foregroundStyle(Theme.Colors.textSecondary)
             }
             Spacer()
+            Button { showingAddSheet = true } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "plus.circle.fill")
+                    Text("Add").font(Theme.Typography.body)
+                }
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .background(Capsule().fill(Theme.Colors.accent))
+                .foregroundStyle(.white)
+            }
+            .buttonStyle(.plain)
+            .keyboardShortcut("n")
+
             Button { vm.load() } label: { Image(systemName: "arrow.clockwise") }
                 .buttonStyle(.plain)
                 .foregroundStyle(Theme.Colors.textSecondary)
@@ -94,6 +126,7 @@ struct MCPManagerView: View {
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, server in
                     MCPRow(
                         server: server,
+                        log: vm.logs[server.name],
                         isExpanded: expandedID == server.id,
                         onToggle: { toggle(server.id) },
                         onRestart: { vm.restart(server) }
@@ -136,6 +169,7 @@ struct MCPManagerView: View {
 
 private struct MCPRow: View {
     let server: MCPServer
+    let log: MCPLogSnapshot?
     let isExpanded: Bool
     let onToggle: () -> Void
     let onRestart: () -> Void
@@ -156,9 +190,23 @@ private struct MCPRow: View {
                     .frame(width: 14)
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(server.name)
-                            .font(Theme.Typography.headline)
-                            .foregroundStyle(Theme.Colors.textPrimary)
+                        HStack(spacing: 8) {
+                            Text(server.name)
+                                .font(Theme.Typography.headline)
+                                .foregroundStyle(Theme.Colors.textPrimary)
+                            if let log, log.lastError != nil {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .font(.system(size: 9))
+                                    Text("log")
+                                        .font(Theme.Typography.caption)
+                                }
+                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                .background(Capsule().fill(Theme.Colors.yellow.opacity(0.15)))
+                                .foregroundStyle(Theme.Colors.yellow)
+                                .help("Warnings or errors present in the server log")
+                            }
+                        }
                         Text(server.displayCommand)
                             .font(Theme.Typography.monoSmall)
                             .foregroundStyle(Theme.Colors.textSecondary)
@@ -212,6 +260,40 @@ private struct MCPRow: View {
             }
             if !server.pids.isEmpty {
                 detailRow(label: "PIDs", value: server.pids.map { String($0) }.joined(separator: ", "), mono: true)
+            }
+            if let log, let msg = log.lastError {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(Theme.Colors.yellow)
+                            .font(.system(size: 11))
+                        Text("Last warning / error")
+                            .sectionHeaderStyle()
+                        if let at = log.lastErrorAt {
+                            Text(RelativeTime.string(from: at))
+                                .font(Theme.Typography.caption)
+                                .foregroundStyle(Theme.Colors.textSecondary)
+                        }
+                    }
+                    Text(msg)
+                        .font(Theme.Typography.monoSmall)
+                        .foregroundStyle(Theme.Colors.textPrimary)
+                        .lineLimit(3)
+                        .textSelection(.enabled)
+                }
+                .padding(.top, 4)
+            }
+            if let path = log?.logPath, log?.logExists == true {
+                Button {
+                    NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "doc.text").font(.system(size: 10))
+                        Text("Reveal log").font(Theme.Typography.caption)
+                    }
+                    .foregroundStyle(Theme.Colors.textSecondary)
+                }
+                .buttonStyle(.plain)
             }
         }
     }
