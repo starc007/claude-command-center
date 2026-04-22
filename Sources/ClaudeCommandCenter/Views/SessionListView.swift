@@ -6,6 +6,11 @@ final class SessionListViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var query: String = ""
     @Published var gitStatuses: [String: GitStatus] = [:]   // projectPath -> GitStatus
+    @Published var contentSearchEnabled = false
+    @Published var contentMatches: Set<String> = []         // folderName set
+    @Published var contentSearching = false
+
+    private var contentSearchTask: Task<Void, Never>?
 
     func load() {
         isLoading = true
@@ -33,12 +38,53 @@ final class SessionListViewModel: ObservableObject {
         }
     }
 
+    func queryChanged() {
+        contentSearchTask?.cancel()
+        guard contentSearchEnabled else {
+            contentMatches = []
+            contentSearching = false
+            return
+        }
+        let q = query.trimmingCharacters(in: .whitespaces)
+        guard q.count >= 2 else {
+            contentMatches = []
+            contentSearching = false
+            return
+        }
+        contentSearching = true
+        contentSearchTask = Task { [weak self] in
+            // Debounce: wait 250ms before committing to a scan.
+            try? await Task.sleep(for: .milliseconds(250))
+            if Task.isCancelled { return }
+
+            let matches = await Task.detached(priority: .utility) {
+                SessionContentSearcher.folderIdsMatching(query: q)
+            }.value
+
+            if Task.isCancelled { return }
+            await MainActor.run {
+                self?.contentMatches = matches
+                self?.contentSearching = false
+            }
+        }
+    }
+
+    func toggleContentSearch() {
+        contentSearchEnabled.toggle()
+        queryChanged()
+    }
+
     var filtered: [ProjectSession] {
         let q = query.trimmingCharacters(in: .whitespaces).lowercased()
         guard !q.isEmpty else { return projects }
+
         return projects.filter { p in
-            p.displayName.lowercased().contains(q) ||
-            p.projectPath.lowercased().contains(q)
+            let byNameOrPath =
+                p.displayName.lowercased().contains(q) ||
+                p.projectPath.lowercased().contains(q)
+            if byNameOrPath { return true }
+            if contentSearchEnabled, contentMatches.contains(p.folderName) { return true }
+            return false
         }
     }
 }
@@ -90,10 +136,36 @@ struct SessionListView: View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(Theme.Colors.textSecondary)
-            TextField("Search projects…", text: $vm.query)
+            TextField(vm.contentSearchEnabled
+                      ? "Search message content…"
+                      : "Search projects…",
+                      text: $vm.query)
                 .textFieldStyle(.plain)
                 .font(Theme.Typography.body)
                 .foregroundStyle(Theme.Colors.textPrimary)
+                .onChange(of: vm.query) { _, _ in vm.queryChanged() }
+
+            if vm.contentSearching {
+                ProgressView().controlSize(.mini)
+            }
+
+            Button {
+                withAnimation(Theme.Animations.spring) { vm.toggleContentSearch() }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "doc.text.magnifyingglass").font(.system(size: 11))
+                    Text("content").font(Theme.Typography.caption)
+                }
+                .padding(.horizontal, 8).padding(.vertical, 4)
+                .background(
+                    Capsule()
+                        .fill(vm.contentSearchEnabled ? Theme.Colors.accentDim : Color.white.opacity(0.04))
+                )
+                .foregroundStyle(vm.contentSearchEnabled ? Theme.Colors.accent : Theme.Colors.textSecondary)
+                .overlay(Capsule().strokeBorder(Theme.Colors.border, lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+            .help("Also search inside session messages")
         }
         .padding(10)
         .background(
