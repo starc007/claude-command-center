@@ -25,22 +25,13 @@ struct ContentView: View {
 
     var body: some View {
         NavigationSplitView {
-            List(selection: $selection) {
-                ForEach(SidebarSection.allCases) { section in
-                    Label(section.rawValue, systemImage: section.icon)
-                        .tag(section)
-                }
+            List(SidebarSection.allCases, id: \.self, selection: $selection) { section in
+                Label(section.rawValue, systemImage: section.icon)
             }
             .listStyle(.sidebar)
             .navigationSplitViewColumnWidth(min: 180, ideal: 220)
         } detail: {
             detailView
-                .id(selection?.id ?? "none")
-                .transition(.asymmetric(
-                    insertion: .opacity.combined(with: .offset(x: 14)),
-                    removal:   .opacity.combined(with: .offset(x: -14))
-                ))
-                .animation(Theme.Animations.spring, value: selection)
         }
     }
 
