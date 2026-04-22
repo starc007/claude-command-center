@@ -1,19 +1,21 @@
 import SwiftUI
 
 enum SidebarSection: String, CaseIterable, Identifiable {
-    case sessions = "Sessions"
-    case ports    = "Ports"
-    case cost     = "Cost"
-    case mcp      = "MCP Servers"
+    case sessions  = "Sessions"
+    case processes = "Processes"
+    case ports     = "Ports"
+    case cost      = "Cost"
+    case mcp       = "MCP Servers"
 
     var id: String { rawValue }
 
     var icon: String {
         switch self {
-        case .sessions: return "square.stack.3d.up"
-        case .ports:    return "network"
-        case .cost:     return "chart.line.uptrend.xyaxis"
-        case .mcp:      return "cube.transparent"
+        case .sessions:  return "square.stack.3d.up"
+        case .processes: return "bolt.circle"
+        case .ports:     return "network"
+        case .cost:      return "chart.line.uptrend.xyaxis"
+        case .mcp:       return "cube.transparent"
         }
     }
 }
@@ -47,8 +49,9 @@ struct ContentView: View {
     @ViewBuilder
     private var detailView: some View {
         switch selection {
-        case .sessions: SessionListView()
-        case .ports:    PortManagerView()
+        case .sessions:  SessionListView()
+        case .processes: ClaudeProcessesView()
+        case .ports:     PortManagerView()
         case .cost:     CostTrackerView()
         case .mcp:      MCPManagerView()
         case .none:     PlaceholderView(title: "Welcome",  subtitle: "Select a section to get started")
