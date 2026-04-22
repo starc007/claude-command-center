@@ -40,6 +40,12 @@ struct ContentView: View {
             .navigationSplitViewColumnWidth(min: 180, ideal: 220)
         } detail: {
             detailView
+                .id(selection?.id ?? "none")
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .offset(x: 14)),
+                    removal:   .opacity.combined(with: .offset(x: -14))
+                ))
+                .animation(Theme.Animations.spring, value: selection)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Theme.Colors.background)
         }
@@ -52,9 +58,9 @@ struct ContentView: View {
         case .sessions:  SessionListView()
         case .processes: ClaudeProcessesView()
         case .ports:     PortManagerView()
-        case .cost:     CostTrackerView()
-        case .mcp:      MCPManagerView()
-        case .none:     PlaceholderView(title: "Welcome",  subtitle: "Select a section to get started")
+        case .cost:      CostTrackerView()
+        case .mcp:       MCPManagerView()
+        case .none:      PlaceholderView(title: "Welcome",  subtitle: "Select a section to get started")
         }
     }
 }

@@ -41,6 +41,7 @@ final class CostTrackerViewModel: ObservableObject {
 
 struct CostTrackerView: View {
     @StateObject private var vm = CostTrackerViewModel()
+    @State private var chartProgress: Double = 0
 
     var body: some View {
         ScrollView {
@@ -54,7 +55,11 @@ struct CostTrackerView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(Theme.Colors.background)
-        .onAppear { vm.load() }
+        .onAppear {
+            vm.load()
+            chartProgress = 0
+            withAnimation(.easeOut(duration: 1.1)) { chartProgress = 1 }
+        }
     }
 
     private var header: some View {
@@ -102,7 +107,7 @@ struct CostTrackerView: View {
         Chart(vm.dailySpend) { day in
             AreaMark(
                 x: .value("Date", day.date),
-                y: .value("Cost", day.cost)
+                y: .value("Cost", day.cost * chartProgress)
             )
             .interpolationMethod(.catmullRom)
             .foregroundStyle(
@@ -113,7 +118,7 @@ struct CostTrackerView: View {
             )
             LineMark(
                 x: .value("Date", day.date),
-                y: .value("Cost", day.cost)
+                y: .value("Cost", day.cost * chartProgress)
             )
             .interpolationMethod(.catmullRom)
             .foregroundStyle(Theme.Colors.accent)
