@@ -7,7 +7,7 @@
 set -euo pipefail
 
 APP_NAME="Claude Command Center"
-GITHUB_REPO="${GITHUB_REPO:-saurabh/claude-command-center}"   # user/repo
+GITHUB_REPO="${GITHUB_REPO:-starc007/claude-command-center}"   # user/repo
 ASSET="ClaudeCommandCenter.zip"
 
 URL="https://github.com/$GITHUB_REPO/releases/latest/download/$ASSET"
