@@ -9,6 +9,7 @@ struct ClaudeCommandCenterApp: App {
         NotificationService.requestAuthorization()
         Task { @MainActor in
             IdleSessionWatcher.shared.start()
+            UpdateChecker.shared.startAutoCheck()
         }
     }
 

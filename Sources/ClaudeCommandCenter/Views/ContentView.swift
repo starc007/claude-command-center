@@ -34,8 +34,11 @@ struct ContentView: View {
             .listStyle(.sidebar)
             .navigationSplitViewColumnWidth(min: 180, ideal: 220)
         } detail: {
-            detailView
-                .background(Theme.Colors.background)
+            VStack(spacing: 0) {
+                UpdateBanner()
+                detailView
+            }
+            .background(Theme.Colors.background)
         }
         .preferredColorScheme(.dark)
     }
