@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct GlassCard<Content: View>: View {
-    var padding: CGFloat = 16
-    var cornerRadius: CGFloat = 12
+    var padding: CGFloat = 14
+    var cornerRadius: CGFloat = 10
     @ViewBuilder var content: () -> Content
 
     var body: some View {
@@ -10,7 +10,7 @@ struct GlassCard<Content: View>: View {
             .padding(padding)
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(.regularMaterial)
+                    .fill(Theme.Colors.surface)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
@@ -35,11 +35,11 @@ struct StatusDot: View {
     var body: some View {
         Circle()
             .fill(color)
-            .frame(width: 8, height: 8)
+            .frame(width: 7, height: 7)
             .overlay(
                 Circle()
                     .stroke(color.opacity(0.5), lineWidth: 2)
-                    .scaleEffect(pulse ? 1.8 : 1.0)
+                    .scaleEffect(pulse ? 2.0 : 1.0)
                     .opacity(pulse ? 0.0 : 0.6)
             )
             .onAppear {
@@ -48,21 +48,3 @@ struct StatusDot: View {
             }
     }
 }
-
-#if DEBUG
-#Preview("GlassCard") {
-    GlassCard {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                StatusDot(status: .running)
-                Text("nodeops-console").font(Theme.Typography.headline)
-            }
-            Text("~/Desktop/work/nodeops")
-                .font(Theme.Typography.monoSmall)
-                .foregroundStyle(Theme.Colors.textSecondary)
-        }
-    }
-    .frame(width: 320)
-    .padding()
-}
-#endif

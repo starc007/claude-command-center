@@ -2,43 +2,21 @@ import Foundation
 import AppKit
 
 enum SessionExporter {
-    /// Renders every JSONL in a project folder as a combined markdown transcript.
-    static func exportProject(_ project: ProjectSession) {
-        let folder = SessionReader.projectsRoot.appending(path: project.folderName, directoryHint: .isDirectory)
-        let fm = FileManager.default
-        guard let files = try? fm.contentsOfDirectory(
-            at: folder,
-            includingPropertiesForKeys: nil,
-            options: [.skipsHiddenFiles]
-        ) else { return }
-
-        let jsonlFiles = files
-            .filter { $0.pathExtension == "jsonl" }
-            .sorted { $0.lastPathComponent < $1.lastPathComponent }
-        guard !jsonlFiles.isEmpty else { return }
-
-        let markdown = renderMarkdown(for: project, from: jsonlFiles)
-        promptSaveAndWrite(markdown: markdown, suggestedName: suggestedFilename(for: project))
+    static func exportSession(_ session: Session) {
+        let md = renderHeader(for: session) + renderSession(at: session.jsonlURL)
+        let suggested = "\(session.projectName)-\(session.id.prefix(8)).md"
+        promptSaveAndWrite(markdown: md, suggestedName: suggested)
     }
 
     // MARK: - Markdown rendering
 
-    private static func renderMarkdown(for project: ProjectSession, from files: [URL]) -> String {
+    private static func renderHeader(for session: Session) -> String {
         var out = ""
-        out += "# \(project.displayName)\n\n"
-        out += "- **Project path**: `\(project.projectPath)`\n"
-        if let last = project.lastActiveAt {
-            out += "- **Last active**: \(formatted(date: last))\n"
-        }
-        out += "- **Sessions**: \(project.sessionCount)\n"
-        out += "- **Messages**: \(project.messageCount)\n"
-        out += "- **Tokens**: \(project.inputTokens) in · \(project.outputTokens) out\n\n"
+        out += "# \(session.projectName)\n\n"
+        out += "- **Path**: `\(session.projectPath)`\n"
+        out += "- **Session**: `\(session.id)`\n"
+        out += "- **Last active**: \(formatted(date: session.lastActiveAt))\n\n"
         out += "---\n\n"
-
-        for file in files {
-            out += renderSession(at: file)
-            out += "\n---\n\n"
-        }
         return out
     }
 
@@ -46,8 +24,7 @@ enum SessionExporter {
         guard let data = try? Data(contentsOf: url),
               let text = String(data: data, encoding: .utf8) else { return "" }
 
-        var md = "## Session `\(url.deletingPathExtension().lastPathComponent)`\n\n"
-
+        var md = ""
         for line in text.split(separator: "\n", omittingEmptySubsequences: true) {
             guard let lineData = line.data(using: .utf8),
                   let obj = try? JSONSerialization.jsonObject(with: lineData) as? [String: Any]
@@ -55,12 +32,9 @@ enum SessionExporter {
 
             guard let type = obj["type"] as? String else { continue }
             switch type {
-            case "user":
-                md += renderUserEntry(obj) + "\n"
-            case "assistant":
-                md += renderAssistantEntry(obj) + "\n"
-            default:
-                continue
+            case "user":      md += renderUserEntry(obj) + "\n"
+            case "assistant": md += renderAssistantEntry(obj) + "\n"
+            default: continue
             }
         }
         return md
@@ -75,28 +49,21 @@ enum SessionExporter {
 
     private static func renderAssistantEntry(_ obj: [String: Any]) -> String {
         guard let message = obj["message"] as? [String: Any] else { return "" }
-        var pieces: [String] = []
-        pieces.append("### Assistant")
+        var pieces: [String] = ["### Assistant"]
 
         if let content = message["content"] as? [[String: Any]] {
             for block in content {
                 guard let type = block["type"] as? String else { continue }
                 switch type {
                 case "text":
-                    if let t = block["text"] as? String, !t.isEmpty {
-                        pieces.append(t)
-                    }
+                    if let t = block["text"] as? String, !t.isEmpty { pieces.append(t) }
                 case "tool_use":
                     let name = (block["name"] as? String) ?? "tool"
                     let input = (block["input"] as? [String: Any]) ?? [:]
-                    let inputJSON = prettyJSON(input)
-                    pieces.append("<details><summary>🛠 `\(name)`</summary>\n\n```json\n\(inputJSON)\n```\n\n</details>")
-                default:
-                    continue
+                    pieces.append("<details><summary>🛠 `\(name)`</summary>\n\n```json\n\(prettyJSON(input))\n```\n\n</details>")
+                default: continue
                 }
             }
-        } else if let text = extractTextFromPlain(message["content"]) {
-            pieces.append(text)
         }
         return pieces.joined(separator: "\n\n") + "\n"
     }
@@ -109,30 +76,18 @@ enum SessionExporter {
         return ""
     }
 
-    private static func extractTextFromPlain(_ content: Any?) -> String? {
-        if let str = content as? String { return str }
-        return nil
-    }
-
     private static func prettyJSON(_ obj: [String: Any]) -> String {
         guard let data = try? JSONSerialization.data(withJSONObject: obj, options: [.prettyPrinted, .sortedKeys]),
-              let s = String(data: data, encoding: .utf8)
-        else { return "{}" }
+              let s = String(data: data, encoding: .utf8) else { return "{}" }
         return s
     }
 
     // MARK: - Save panel
 
-    private static func suggestedFilename(for project: ProjectSession) -> String {
-        let stamp = Self.fileStampFormatter.string(from: .now)
-        return "\(project.displayName)-\(stamp).md"
-    }
-
     private static func promptSaveAndWrite(markdown: String, suggestedName: String) {
         DispatchQueue.main.async {
             let panel = NSSavePanel()
             panel.nameFieldStringValue = suggestedName
-            panel.allowedContentTypes = [.init(filenameExtension: "md")].compactMap { $0 }
             panel.canCreateDirectories = true
             if panel.runModal() == .OK, let url = panel.url {
                 try? markdown.write(to: url, atomically: true, encoding: .utf8)
@@ -140,13 +95,6 @@ enum SessionExporter {
             }
         }
     }
-
-    private static let fileStampFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
 
     private static func formatted(date: Date) -> String {
         let f = DateFormatter()

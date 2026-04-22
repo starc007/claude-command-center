@@ -2,30 +2,30 @@ import SwiftUI
 
 enum Theme {}
 
-/// Colors for the app. Native macOS everywhere except for a single Claude-orange
-/// accent — we deliberately lean on system colors + materials so the window
-/// chrome follows the user's appearance preference and feels Mac-native.
+/// Rich dark theme inspired by the shared mock — Linear / Arc-style restraint,
+/// not high-contrast. Single branded accent (Claude-orange) kept for selection
+/// and interactive highlights; green is the "running" hue.
 extension Theme {
     enum Colors {
-        // Text — use primary / secondary so they flip correctly in light/dark.
-        static let textPrimary   = Color.primary
-        static let textSecondary = Color.secondary
+        // Window + surfaces
+        static let background      = Color(white: 0.05)   // ≈ #0D0D0D
+        static let surface         = Color(white: 0.09)   // card fill
+        static let surfaceRaised   = Color(white: 0.13)   // hover / pressed
+        static let border          = Color.white.opacity(0.06)
+        static let borderStrong    = Color.white.opacity(0.10)
 
-        // Borders / separators driven by the system.
-        static let border        = Color(nsColor: .separatorColor)
-        static let borderStrong  = Color(nsColor: .separatorColor).opacity(1.0)
+        // Text
+        static let textPrimary     = Color.white
+        static let textSecondary   = Color.white.opacity(0.55)
+        static let textTertiary    = Color.white.opacity(0.35)
 
-        // Surfaces — used when we need a subtle fill behind a material.
-        static let surface       = Color(nsColor: .controlBackgroundColor)
-        static let surfaceRaised = Color(nsColor: .windowBackgroundColor)
+        // Branded accent
+        static let accent          = Color(red: 0xD9 / 255.0, green: 0x77 / 255.0, blue: 0x06 / 255.0)
+        static let accentDim       = accent.opacity(0.15)
 
-        // Our single branded accent.
-        static let accent        = Color(red: 0xD9 / 255.0, green: 0x77 / 255.0, blue: 0x06 / 255.0)
-        static let accentDim     = accent.opacity(0.15)
-
-        // Status colors — SwiftUI defaults pick up the native hue.
-        static let green         = Color.green
-        static let red           = Color.red
-        static let yellow        = Color.yellow
+        // Status
+        static let green           = Color(red: 0.30, green: 0.85, blue: 0.55)
+        static let red             = Color(red: 0.95, green: 0.45, blue: 0.45)
+        static let yellow          = Color(red: 0.98, green: 0.80, blue: 0.35)
     }
 }

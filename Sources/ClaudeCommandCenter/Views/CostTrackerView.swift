@@ -54,6 +54,7 @@ struct CostTrackerView: View {
             .padding(24)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Theme.Colors.background)
         .onAppear {
             vm.load()
             chartProgress = 0

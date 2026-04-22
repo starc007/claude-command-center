@@ -32,7 +32,9 @@ struct ContentView: View {
             .navigationSplitViewColumnWidth(min: 180, ideal: 220)
         } detail: {
             detailView
+                .background(Theme.Colors.background)
         }
+        .preferredColorScheme(.dark)
     }
 
     @ViewBuilder

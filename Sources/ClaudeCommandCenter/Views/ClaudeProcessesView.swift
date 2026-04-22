@@ -47,6 +47,7 @@ struct ClaudeProcessesView: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(Theme.Colors.background)
         .onAppear { vm.refresh() }
     }
 
