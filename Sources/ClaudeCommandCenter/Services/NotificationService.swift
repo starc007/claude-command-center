@@ -8,11 +8,19 @@ import UserNotifications
 /// we fall through silently so development remains friction-free. Migrate to an Xcode app
 /// target to light this up.
 enum NotificationService {
+    /// True only when the binary is inside a proper `.app` bundle. The
+    /// UserNotifications framework asserts on a real bundleProxy and will crash
+    /// an unbundled `swift run` otherwise.
+    static var isBundled: Bool { Bundle.main.bundleIdentifier != nil }
+
     static func requestAuthorization() {
+        guard isBundled else { return }
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
     }
 
     static func notify(title: String, body: String) {
+        guard isBundled else { return }
+
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body

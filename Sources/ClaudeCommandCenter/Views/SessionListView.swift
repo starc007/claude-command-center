@@ -210,6 +210,9 @@ private struct SessionRow: View {
                 TerminalLauncher.openTerminal(at: project.projectPath)
             }
             Divider()
+            Button("Export as Markdown…") {
+                SessionExporter.exportProject(project)
+            }
             Button("Copy path") {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(project.projectPath, forType: .string)
