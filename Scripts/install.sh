@@ -11,34 +11,34 @@ MIN_MACOS="14.0"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD_DIR="$ROOT/build"
-APP_DIR="$BUILD_DIR/$APP_NAME.app"
+APP_DIR="$BUILD_DIR/${APP_NAME}.app"
 CONTENTS="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS/MacOS"
 RES_DIR="$CONTENTS/Resources"
 
-echo "▶ Building release binary (this takes ~30s the first time)…"
+echo "==> Building release binary (takes ~30s first time)"
 cd "$ROOT"
 swift build -c release
 
-echo "▶ Assembling $APP_NAME.app…"
+echo "==> Assembling ${APP_NAME}.app"
 rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$RES_DIR"
 
-cp ".build/release/$BIN_NAME" "$MACOS_DIR/$BIN_NAME"
+cp ".build/release/${BIN_NAME}" "${MACOS_DIR}/${BIN_NAME}"
 
 cat > "$CONTENTS/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleIdentifier</key>          <string>$BUNDLE_ID</string>
-    <key>CFBundleName</key>                <string>$BIN_NAME</string>
-    <key>CFBundleDisplayName</key>         <string>$APP_NAME</string>
-    <key>CFBundleExecutable</key>          <string>$BIN_NAME</string>
-    <key>CFBundleVersion</key>             <string>$VERSION</string>
-    <key>CFBundleShortVersionString</key>  <string>$VERSION</string>
+    <key>CFBundleIdentifier</key>          <string>${BUNDLE_ID}</string>
+    <key>CFBundleName</key>                <string>${BIN_NAME}</string>
+    <key>CFBundleDisplayName</key>         <string>${APP_NAME}</string>
+    <key>CFBundleExecutable</key>          <string>${BIN_NAME}</string>
+    <key>CFBundleVersion</key>             <string>${VERSION}</string>
+    <key>CFBundleShortVersionString</key>  <string>${VERSION}</string>
     <key>CFBundlePackageType</key>         <string>APPL</string>
-    <key>LSMinimumSystemVersion</key>      <string>$MIN_MACOS</string>
+    <key>LSMinimumSystemVersion</key>      <string>${MIN_MACOS}</string>
     <key>NSHighResolutionCapable</key>     <true/>
     <key>LSUIElement</key>                 <false/>
     <key>NSSupportsAutomaticTermination</key> <true/>
@@ -50,19 +50,19 @@ cat > "$CONTENTS/Info.plist" <<PLIST
 </plist>
 PLIST
 
-echo "▶ Ad-hoc code signing…"
+echo "==> Ad-hoc code signing"
 codesign --force --deep --sign - "$APP_DIR"
 
-echo "▶ Installing to /Applications…"
-if [ -d "/Applications/$APP_NAME.app" ]; then
-    rm -rf "/Applications/$APP_NAME.app"
+echo "==> Installing to /Applications"
+if [ -d "/Applications/${APP_NAME}.app" ]; then
+    rm -rf "/Applications/${APP_NAME}.app"
 fi
 cp -R "$APP_DIR" "/Applications/"
 
 echo
-echo "✓ Installed to /Applications/$APP_NAME.app"
+echo "OK: Installed to /Applications/${APP_NAME}.app"
 echo
-echo "Launch it from Spotlight (⌘Space, type \"Claude Command Center\")."
-echo "First launch: Gatekeeper will block it because it's unsigned. Right-click"
-echo "the app in Finder → Open → Open to bypass, or run:"
-echo "  xattr -dr com.apple.quarantine \"/Applications/$APP_NAME.app\""
+echo "Launch from Spotlight (Cmd+Space, type 'Claude Command Center')."
+echo "First launch Gatekeeper will block unsigned binary. Either:"
+echo "  - right-click the app in Finder -> Open -> Open"
+echo "  - or: xattr -dr com.apple.quarantine \"/Applications/${APP_NAME}.app\""

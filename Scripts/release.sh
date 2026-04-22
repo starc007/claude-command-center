@@ -4,8 +4,8 @@
 #
 # Usage:
 #   bash Scripts/release.sh
-#   → dist/ClaudeCommandCenter.zip
-#   → dist/ClaudeCommandCenter.dmg
+#   -> dist/ClaudeCommandCenter.zip
+#   -> dist/ClaudeCommandCenter.dmg
 set -euo pipefail
 
 APP_NAME="Claude Command Center"
@@ -17,33 +17,33 @@ MIN_MACOS="14.0"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD_DIR="$ROOT/build"
 DIST_DIR="$ROOT/dist"
-APP_DIR="$BUILD_DIR/$APP_NAME.app"
+APP_DIR="$BUILD_DIR/${APP_NAME}.app"
 CONTENTS="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS/MacOS"
 RES_DIR="$CONTENTS/Resources"
 
-echo "▶ Building release binary…"
+echo "==> Building release binary"
 cd "$ROOT"
 swift build -c release
 
-echo "▶ Assembling $APP_NAME.app…"
+echo "==> Assembling ${APP_NAME}.app"
 rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$RES_DIR"
-cp ".build/release/$BIN_NAME" "$MACOS_DIR/$BIN_NAME"
+cp ".build/release/${BIN_NAME}" "${MACOS_DIR}/${BIN_NAME}"
 
 cat > "$CONTENTS/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleIdentifier</key>          <string>$BUNDLE_ID</string>
-    <key>CFBundleName</key>                <string>$BIN_NAME</string>
-    <key>CFBundleDisplayName</key>         <string>$APP_NAME</string>
-    <key>CFBundleExecutable</key>          <string>$BIN_NAME</string>
-    <key>CFBundleVersion</key>             <string>$VERSION</string>
-    <key>CFBundleShortVersionString</key>  <string>$VERSION</string>
+    <key>CFBundleIdentifier</key>          <string>${BUNDLE_ID}</string>
+    <key>CFBundleName</key>                <string>${BIN_NAME}</string>
+    <key>CFBundleDisplayName</key>         <string>${APP_NAME}</string>
+    <key>CFBundleExecutable</key>          <string>${BIN_NAME}</string>
+    <key>CFBundleVersion</key>             <string>${VERSION}</string>
+    <key>CFBundleShortVersionString</key>  <string>${VERSION}</string>
     <key>CFBundlePackageType</key>         <string>APPL</string>
-    <key>LSMinimumSystemVersion</key>      <string>$MIN_MACOS</string>
+    <key>LSMinimumSystemVersion</key>      <string>${MIN_MACOS}</string>
     <key>NSHighResolutionCapable</key>     <true/>
     <key>LSUIElement</key>                 <false/>
     <key>NSSupportsAutomaticTermination</key> <true/>
@@ -55,22 +55,20 @@ cat > "$CONTENTS/Info.plist" <<PLIST
 </plist>
 PLIST
 
-echo "▶ Ad-hoc code signing…"
+echo "==> Ad-hoc code signing"
 codesign --force --deep --sign - "$APP_DIR"
 
 rm -rf "$DIST_DIR"
 mkdir -p "$DIST_DIR"
 
-echo "▶ Creating zip…"
-# `ditto` preserves resource forks + extended attributes correctly on macOS.
+echo "==> Creating zip"
 ditto -c -k --keepParent "$APP_DIR" "$DIST_DIR/ClaudeCommandCenter.zip"
 
-echo "▶ Creating dmg…"
+echo "==> Creating dmg"
 DMG_STAGING="$BUILD_DIR/dmg-staging"
 rm -rf "$DMG_STAGING"
 mkdir -p "$DMG_STAGING"
 cp -R "$APP_DIR" "$DMG_STAGING/"
-# Symlink /Applications into the DMG so users can drag-and-drop.
 ln -s /Applications "$DMG_STAGING/Applications"
 
 hdiutil create \
@@ -81,9 +79,9 @@ hdiutil create \
     > /dev/null
 
 echo
-echo "✓ Artifacts ready in dist/"
+echo "OK: Artifacts ready in dist/"
 ls -lh "$DIST_DIR"
 echo
 echo "Next steps:"
-echo "  1. Create a GitHub release: gh release create v$VERSION dist/* --generate-notes"
-echo "  2. Share the release URL or the remote-install one-liner from Scripts/remote-install.sh"
+echo "  1. gh release create v${VERSION} dist/* --generate-notes"
+echo "  2. Share the one-liner from Scripts/remote-install.sh"
