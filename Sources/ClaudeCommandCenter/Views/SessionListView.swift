@@ -237,13 +237,18 @@ struct SessionListView: View {
             SessionEditorSheet(session: session)
         }
         .overlay(alignment: .bottom) {
-            if !vm.selection.isEmpty {
-                bulkActionBar
-                    .padding(20)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            // Keep the animation scoped to THIS overlay. Putting it on the
+            // outer VStack caused LazyVStack rows to occasionally render
+            // blank until scrolled past.
+            ZStack {
+                if !vm.selection.isEmpty {
+                    bulkActionBar
+                        .padding(20)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
             }
+            .animation(Theme.Animations.spring, value: vm.selection.isEmpty)
         }
-        .animation(Theme.Animations.spring, value: vm.selection.isEmpty)
     }
 
     // MARK: - Header + filters
@@ -374,16 +379,32 @@ struct SessionListView: View {
     private var content: some View {
         let parts = vm.partitioned
         return ScrollView {
-            LazyVStack(spacing: 4) {
+            // Plain VStack instead of LazyVStack — we were seeing rows render
+            // blank on recycle. The lists are O(10-200) rows for a typical
+            // user, so non-lazy is fine and eliminates the flicker entirely.
+            VStack(spacing: 4) {
                 if !parts.pinned.isEmpty {
-                    pinnedSection(parts.pinned)
+                    pinnedHeader
+                    ForEach(parts.pinned) { session in
+                        sessionRow(session).id("pinned-\(session.id)")
+                    }
+                    Spacer().frame(height: 10)
                 }
                 if parts.regular.isEmpty && parts.pinned.isEmpty {
-                    emptyState
-                        .frame(minHeight: 240)
-                } else if !parts.regular.isEmpty {
+                    emptyState.frame(minHeight: 240)
+                } else {
                     ForEach(groupByProject(parts.regular)) { group in
-                        projectGroup(group, collapsible: false)
+                        VStack(spacing: 4) {
+                            ProjectGroupHeader(
+                                name: group.projectName,
+                                path: group.projectPath,
+                                git: vm.gitStatuses[group.projectPath]
+                            )
+                            ForEach(group.sessions) { session in
+                                sessionRow(session).id(session.id)
+                            }
+                            Spacer().frame(height: 10)
+                        }
                     }
                 }
             }
@@ -391,8 +412,7 @@ struct SessionListView: View {
         }
     }
 
-    @ViewBuilder
-    private func pinnedSection(_ sessions: [Session]) -> some View {
+    private var pinnedHeader: some View {
         HStack(spacing: 6) {
             Image(systemName: "pin.fill").font(.system(size: 9))
             Text("PINNED")
@@ -400,27 +420,9 @@ struct SessionListView: View {
                 .tracking(1)
         }
         .foregroundStyle(Theme.Colors.accent)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 4)
         .padding(.top, 6).padding(.bottom, 4)
-
-        ForEach(sessions) { session in
-            sessionRow(session)
-        }
-        Spacer().frame(height: 10)
-    }
-
-    private func projectGroup(_ group: ProjectGroup, collapsible: Bool) -> some View {
-        VStack(spacing: 4) {
-            ProjectGroupHeader(
-                name: group.projectName,
-                path: group.projectPath,
-                git: vm.gitStatuses[group.projectPath]
-            )
-            ForEach(group.sessions) { session in
-                sessionRow(session)
-            }
-            Spacer().frame(height: 10)
-        }
     }
 
     private func sessionRow(_ session: Session) -> some View {
