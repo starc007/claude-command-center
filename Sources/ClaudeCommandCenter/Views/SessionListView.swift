@@ -5,6 +5,7 @@ final class SessionListViewModel: ObservableObject {
     @Published var projects: [ProjectSession] = []
     @Published var isLoading = false
     @Published var query: String = ""
+    @Published var gitStatuses: [String: GitStatus] = [:]   // projectPath -> GitStatus
 
     func load() {
         isLoading = true
@@ -14,6 +15,21 @@ final class SessionListViewModel: ObservableObject {
             }.value
             self?.projects = all
             self?.isLoading = false
+            self?.loadGitStatuses(for: all)
+        }
+    }
+
+    private func loadGitStatuses(for projects: [ProjectSession]) {
+        let paths = projects.map(\.projectPath)
+        Task { [weak self] in
+            let statuses = await Task.detached(priority: .utility) { () -> [String: GitStatus] in
+                var result: [String: GitStatus] = [:]
+                for path in paths {
+                    if let s = GitService.status(at: path) { result[path] = s }
+                }
+                return result
+            }.value
+            self?.gitStatuses = statuses
         }
     }
 
@@ -94,13 +110,17 @@ struct SessionListView: View {
         ScrollView {
             LazyVStack(spacing: 10) {
                 ForEach(Array(vm.filtered.enumerated()), id: \.element.id) { index, project in
-                    SessionRow(project: project, isSelected: selection == project.id)
-                        .onTapGesture { selection = project.id }
-                        .transition(.asymmetric(
-                            insertion: .opacity.combined(with: .move(edge: .top)),
-                            removal: .opacity
-                        ))
-                        .animation(Theme.Animations.staggered(index: index), value: vm.projects.count)
+                    SessionRow(
+                        project: project,
+                        git: vm.gitStatuses[project.projectPath],
+                        isSelected: selection == project.id
+                    )
+                    .onTapGesture { selection = project.id }
+                    .transition(.asymmetric(
+                        insertion: .opacity.combined(with: .move(edge: .top)),
+                        removal: .opacity
+                    ))
+                    .animation(Theme.Animations.staggered(index: index), value: vm.projects.count)
                 }
             }
         }
@@ -135,6 +155,7 @@ struct SessionListView: View {
 
 private struct SessionRow: View {
     let project: ProjectSession
+    let git: GitStatus?
     let isSelected: Bool
     @State private var hovering = false
 
@@ -148,13 +169,10 @@ private struct SessionRow: View {
                             .foregroundStyle(Theme.Colors.textPrimary)
                             .lineLimit(1)
                         if project.sessionCount > 1 {
-                            Text("\(project.sessionCount)")
-                                .font(Theme.Typography.caption)
-                                .padding(.horizontal, 6).padding(.vertical, 2)
-                                .background(
-                                    Capsule().fill(Theme.Colors.accentDim)
-                                )
-                                .foregroundStyle(Theme.Colors.accent)
+                            countBadge(value: project.sessionCount)
+                        }
+                        if let git = git {
+                            gitPill(git: git)
                         }
                     }
                     Text(project.projectPath)
@@ -172,6 +190,9 @@ private struct SessionRow: View {
                         .font(Theme.Typography.caption)
                         .foregroundStyle(Theme.Colors.textSecondary)
                 }
+                resumeButton
+                    .opacity(hovering ? 1 : 0.0)
+                    .animation(Theme.Animations.easeOut, value: hovering)
             }
         }
         .scaleEffect(hovering ? 1.005 : 1.0)
@@ -182,6 +203,13 @@ private struct SessionRow: View {
         .onHover { hovering = $0 }
         .animation(Theme.Animations.springSnappy, value: hovering)
         .contextMenu {
+            Button("Resume in Terminal") {
+                TerminalLauncher.resumeClaude(at: project.projectPath)
+            }
+            Button("Open Terminal here") {
+                TerminalLauncher.openTerminal(at: project.projectPath)
+            }
+            Divider()
             Button("Copy path") {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(project.projectPath, forType: .string)
@@ -192,5 +220,51 @@ private struct SessionRow: View {
                 )
             }
         }
+    }
+
+    private var resumeButton: some View {
+        Button {
+            TerminalLauncher.resumeClaude(at: project.projectPath)
+        } label: {
+            Image(systemName: "play.circle.fill")
+                .font(.system(size: 18))
+                .foregroundStyle(Theme.Colors.accent)
+        }
+        .buttonStyle(.plain)
+        .help("Resume with `claude --continue`")
+    }
+
+    private func countBadge(value: Int) -> some View {
+        Text("\(value)")
+            .font(Theme.Typography.caption)
+            .padding(.horizontal, 6).padding(.vertical, 2)
+            .background(Capsule().fill(Theme.Colors.accentDim))
+            .foregroundStyle(Theme.Colors.accent)
+    }
+
+    private func gitPill(git: GitStatus) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: "arrow.triangle.branch")
+                .font(.system(size: 9))
+            Text(git.branch ?? "detached")
+                .font(Theme.Typography.caption)
+            if git.hasChanges {
+                Circle()
+                    .fill(Theme.Colors.yellow)
+                    .frame(width: 5, height: 5)
+            }
+        }
+        .padding(.horizontal, 6).padding(.vertical, 2)
+        .background(
+            Capsule()
+                .fill(Color.white.opacity(0.04))
+                .overlay(Capsule().strokeBorder(Theme.Colors.border, lineWidth: 1))
+        )
+        .foregroundStyle(git.hasChanges ? Theme.Colors.yellow : Theme.Colors.textSecondary)
+        .help(
+            git.hasChanges
+            ? "\(git.modifiedCount) modified, \(git.untrackedCount) untracked"
+            : "Clean working tree"
+        )
     }
 }

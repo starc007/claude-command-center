@@ -2,6 +2,10 @@ import SwiftUI
 
 @main
 struct ClaudeCommandCenterApp: App {
+    init() {
+        NotificationService.requestAuthorization()
+    }
+
     var body: some Scene {
         Window("Claude Command Center", id: "main") {
             ContentView()
