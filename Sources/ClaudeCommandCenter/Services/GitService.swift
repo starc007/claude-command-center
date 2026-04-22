@@ -43,15 +43,10 @@ enum GitService {
         process.standardOutput = pipe
         process.standardError  = Pipe()
 
-        do {
-            try process.run()
-            process.waitUntilExit()
-            guard process.terminationStatus == 0 else { return nil }
-        } catch {
-            return nil
-        }
-
+        do { try process.run() } catch { return nil }
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else { return nil }
         return String(data: data, encoding: .utf8)
     }
 }

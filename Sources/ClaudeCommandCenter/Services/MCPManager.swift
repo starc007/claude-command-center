@@ -77,9 +77,13 @@ struct PSSnapshot: Sendable {
         let pipe = Pipe()
         process.standardOutput = pipe
         process.standardError  = Pipe()
-        do { try process.run(); process.waitUntilExit() } catch { return PSSnapshot(entries: []) }
+        do { try process.run() } catch { return PSSnapshot(entries: []) }
 
+        // Read the pipe BEFORE waiting. `ps -axww` can produce >64KB of
+        // output, which overflows the pipe buffer and deadlocks
+        // `waitUntilExit()` if we call it first.
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
         guard let text = String(data: data, encoding: .utf8) else { return PSSnapshot(entries: []) }
 
         var entries: [Entry] = []

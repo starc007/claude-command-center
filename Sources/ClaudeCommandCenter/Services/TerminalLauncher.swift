@@ -43,13 +43,13 @@ enum TerminalLauncher {
     }
 
     private static func runGhostty(command: String) {
-        // Ghostty honors `-e` to run a command in a new window; fall back to
-        // opening Ghostty with an AppleScript do-script if -e isn't reachable.
+        // `open -na Ghostty --args -e sh -c <command>` — each token is a
+        // separate argument. Ghostty's -e executes the rest as argv, so we
+        // hand it `sh -c <command>` to evaluate our `cd && claude …` line.
         let task = Process()
         task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-        task.arguments = ["-na", "Ghostty", "--args", "-e", "\(shellJoin(["sh", "-c", command]))"]
+        task.arguments = ["-na", "Ghostty", "--args", "-e", "sh", "-c", command]
         do { try task.run() } catch {
-            // Last-ditch: let the user's default handler open a shell and they'll run it manually.
             runAppleTerminal(command: command)
         }
     }

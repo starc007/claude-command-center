@@ -108,14 +108,11 @@ enum PortManager {
         process.standardOutput = pipe
         process.standardError  = Pipe()
 
-        do {
-            try process.run()
-            process.waitUntilExit()
-        } catch {
-            return nil
-        }
-
+        do { try process.run() } catch { return nil }
+        // Drain the pipe BEFORE waitUntilExit — otherwise a full pipe buffer
+        // deadlocks both ends.
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
         return String(data: data, encoding: .utf8)
     }
 }
