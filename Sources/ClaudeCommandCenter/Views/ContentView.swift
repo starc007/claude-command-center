@@ -47,7 +47,7 @@ struct ContentView: View {
     @ViewBuilder
     private var detailView: some View {
         switch selection {
-        case .sessions: PlaceholderView(title: "Sessions", subtitle: "Claude Code projects from ~/.claude/projects/")
+        case .sessions: SessionListView()
         case .ports:    PlaceholderView(title: "Ports",    subtitle: "Listening ports via lsof")
         case .cost:     PlaceholderView(title: "Cost",     subtitle: "Token usage + trends")
         case .mcp:      PlaceholderView(title: "MCP Servers", subtitle: "Configured MCP servers + status")
