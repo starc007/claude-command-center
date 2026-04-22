@@ -109,7 +109,6 @@ struct SessionListView: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(Theme.Colors.background)
         .onAppear { vm.load() }
     }
 
@@ -170,7 +169,7 @@ struct SessionListView: View {
         .padding(10)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Theme.Colors.surface)
+                .fill(.thinMaterial)
                 .overlay(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .strokeBorder(Theme.Colors.border, lineWidth: 1)

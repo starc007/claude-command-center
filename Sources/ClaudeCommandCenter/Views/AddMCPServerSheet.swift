@@ -26,8 +26,6 @@ struct AddMCPServerSheet: View {
         }
         .padding(20)
         .frame(width: 480)
-        .background(Theme.Colors.surface)
-        .preferredColorScheme(.dark)
     }
 
     private var header: some View {
@@ -72,7 +70,7 @@ struct AddMCPServerSheet: View {
                 .padding(10)
                 .background(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(Theme.Colors.background)
+                        .fill(.thinMaterial)
                         .overlay(
                             RoundedRectangle(cornerRadius: 6, style: .continuous)
                                 .strokeBorder(Theme.Colors.border, lineWidth: 1)
@@ -92,7 +90,7 @@ struct AddMCPServerSheet: View {
                 .frame(minHeight: 70, maxHeight: 120)
                 .background(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(Theme.Colors.background)
+                        .fill(.thinMaterial)
                         .overlay(
                             RoundedRectangle(cornerRadius: 6, style: .continuous)
                                 .strokeBorder(Theme.Colors.border, lineWidth: 1)

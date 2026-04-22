@@ -9,18 +9,13 @@ struct GlassCard<Content: View>: View {
         content()
             .padding(padding)
             .background(
-                ZStack {
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(.ultraThinMaterial)
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                        .fill(Theme.Colors.surface.opacity(0.6))
-                }
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(.regularMaterial)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(Theme.Colors.borderStrong, lineWidth: 1)
+                    .strokeBorder(Theme.Colors.border, lineWidth: 1)
             )
-            .shadow(color: .black.opacity(0.35), radius: 20, x: 0, y: 8)
     }
 }
 
@@ -56,22 +51,18 @@ struct StatusDot: View {
 
 #if DEBUG
 #Preview("GlassCard") {
-    ZStack {
-        Theme.Colors.background.ignoresSafeArea()
-        GlassCard {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    StatusDot(status: .running)
-                    Text("nodeops-console").font(Theme.Typography.headline)
-                }
-                Text("~/Desktop/work/nodeops")
-                    .font(Theme.Typography.monoSmall)
-                    .foregroundStyle(Theme.Colors.textSecondary)
+    GlassCard {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                StatusDot(status: .running)
+                Text("nodeops-console").font(Theme.Typography.headline)
             }
+            Text("~/Desktop/work/nodeops")
+                .font(Theme.Typography.monoSmall)
+                .foregroundStyle(Theme.Colors.textSecondary)
         }
-        .frame(width: 320)
-        .padding()
     }
-    .preferredColorScheme(.dark)
+    .frame(width: 320)
+    .padding()
 }
 #endif

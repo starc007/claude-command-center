@@ -2,31 +2,30 @@ import SwiftUI
 
 enum Theme {}
 
+/// Colors for the app. Native macOS everywhere except for a single Claude-orange
+/// accent — we deliberately lean on system colors + materials so the window
+/// chrome follows the user's appearance preference and feels Mac-native.
 extension Theme {
     enum Colors {
-        static let background      = Color(hex: 0x0A0A0F)
-        static let surface         = Color(hex: 0x13131A)
-        static let surfaceRaised   = Color(hex: 0x1C1C26)
-        static let border          = Color.white.opacity(0.08)
-        static let borderStrong    = Color.white.opacity(0.15)
+        // Text — use primary / secondary so they flip correctly in light/dark.
+        static let textPrimary   = Color.primary
+        static let textSecondary = Color.secondary
 
-        static let textPrimary     = Color(hex: 0xF0F0F5)
-        static let textSecondary   = Color(hex: 0x8B8B9E)
+        // Borders / separators driven by the system.
+        static let border        = Color(nsColor: .separatorColor)
+        static let borderStrong  = Color(nsColor: .separatorColor).opacity(1.0)
 
-        static let accent          = Color(hex: 0xD97706)
-        static let accentDim       = Color(hex: 0xD97706).opacity(0.15)
+        // Surfaces — used when we need a subtle fill behind a material.
+        static let surface       = Color(nsColor: .controlBackgroundColor)
+        static let surfaceRaised = Color(nsColor: .windowBackgroundColor)
 
-        static let green           = Color(hex: 0x34D399)
-        static let red             = Color(hex: 0xF87171)
-        static let yellow          = Color(hex: 0xFBBF24)
-    }
-}
+        // Our single branded accent.
+        static let accent        = Color(red: 0xD9 / 255.0, green: 0x77 / 255.0, blue: 0x06 / 255.0)
+        static let accentDim     = accent.opacity(0.15)
 
-extension Color {
-    init(hex: UInt32, alpha: Double = 1.0) {
-        let r = Double((hex >> 16) & 0xFF) / 255.0
-        let g = Double((hex >> 8)  & 0xFF) / 255.0
-        let b = Double( hex        & 0xFF) / 255.0
-        self.init(.sRGB, red: r, green: g, blue: b, opacity: alpha)
+        // Status colors — SwiftUI defaults pick up the native hue.
+        static let green         = Color.green
+        static let red           = Color.red
+        static let yellow        = Color.yellow
     }
 }

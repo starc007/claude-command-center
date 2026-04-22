@@ -44,8 +44,6 @@ struct MenuBarView: View {
         }
         .padding(14)
         .frame(width: 260)
-        .background(Theme.Colors.surface)
-        .preferredColorScheme(.dark)
     }
 }
 
@@ -71,7 +69,7 @@ private struct MenuRow: View {
             .padding(.vertical, 6)
             .background(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(hovering ? Theme.Colors.surfaceRaised : .clear)
+                    .fill(hovering ? Color.primary.opacity(0.08) : .clear)
             )
         }
         .buttonStyle(.plain)
