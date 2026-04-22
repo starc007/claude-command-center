@@ -4,6 +4,9 @@ import SwiftUI
 struct ClaudeCommandCenterApp: App {
     init() {
         NotificationService.requestAuthorization()
+        Task { @MainActor in
+            IdleSessionWatcher.shared.start()
+        }
     }
 
     var body: some Scene {
