@@ -21,20 +21,21 @@ enum SidebarSection: String, CaseIterable, Identifiable, Hashable {
 }
 
 struct ContentView: View {
-    @State private var selection: SidebarSection = .sessions
+    @State private var selection: SidebarSection? = .sessions
 
     var body: some View {
         NavigationSplitView {
-            List(SidebarSection.allCases, selection: $selection) { section in
-                Label(section.rawValue, systemImage: section.icon)
-                    .tag(section)
-                    .padding(.vertical, 2)
+            List(selection: $selection) {
+                ForEach(SidebarSection.allCases) { section in
+                    Label(section.rawValue, systemImage: section.icon)
+                        .tag(section)
+                }
             }
             .listStyle(.sidebar)
             .navigationSplitViewColumnWidth(min: 180, ideal: 220)
         } detail: {
             detailView
-                .id(selection.id)
+                .id(selection?.id ?? "none")
                 .transition(.asymmetric(
                     insertion: .opacity.combined(with: .offset(x: 14)),
                     removal:   .opacity.combined(with: .offset(x: -14))
@@ -51,6 +52,7 @@ struct ContentView: View {
         case .ports:     PortManagerView()
         case .cost:      CostTrackerView()
         case .mcp:       MCPManagerView()
+        case nil:        EmptyView()
         }
     }
 }
