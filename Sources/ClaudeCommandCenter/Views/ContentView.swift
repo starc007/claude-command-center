@@ -21,11 +21,14 @@ enum SidebarSection: String, CaseIterable, Identifiable, Hashable {
 }
 
 struct ContentView: View {
-    @State private var selection: SidebarSection? = .sessions
+    @ObservedObject private var state = AppState.shared
 
     var body: some View {
         NavigationSplitView {
-            List(SidebarSection.allCases, id: \.self, selection: $selection) { section in
+            List(SidebarSection.allCases, id: \.self, selection: Binding(
+                get: { state.selection },
+                set: { state.selection = $0 ?? state.selection }
+            )) { section in
                 Label(section.rawValue, systemImage: section.icon)
             }
             .listStyle(.sidebar)
@@ -39,13 +42,12 @@ struct ContentView: View {
 
     @ViewBuilder
     private var detailView: some View {
-        switch selection {
+        switch state.selection {
         case .sessions:  SessionListView()
         case .processes: ClaudeProcessesView()
         case .ports:     PortManagerView()
         case .cost:      CostTrackerView()
         case .mcp:       MCPManagerView()
-        case nil:        EmptyView()
         }
     }
 }
