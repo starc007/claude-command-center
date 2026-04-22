@@ -4,6 +4,7 @@ import AppKit
 struct MenuBarView: View {
     @Environment(\.openWindow) private var openWindow
     @ObservedObject private var state = AppState.shared
+    @ObservedObject private var checker = UpdateChecker.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -12,6 +13,9 @@ struct MenuBarView: View {
                     .font(Theme.Typography.headline)
                     .foregroundStyle(Theme.Colors.textPrimary)
                 Spacer()
+                Text("v\(AppVersion.current.description)")
+                    .font(.system(size: 10, design: .monospaced))
+                    .foregroundStyle(Theme.Colors.textTertiary)
             }
 
             Divider().overlay(Theme.Colors.border)
@@ -23,6 +27,10 @@ struct MenuBarView: View {
                     }
                 }
             }
+
+            Divider().overlay(Theme.Colors.border)
+
+            updateRow
 
             Divider().overlay(Theme.Colors.border)
 
@@ -40,6 +48,35 @@ struct MenuBarView: View {
         }
         .padding(14)
         .frame(width: 260)
+    }
+
+    @ViewBuilder
+    private var updateRow: some View {
+        switch checker.state {
+        case .available(let r):
+            MenuRow(icon: "arrow.up.circle.fill", title: "Update to \(r.tagName)") {
+                openWindow(id: "main")
+                NSApp.activate(ignoringOtherApps: true)
+                checker.downloadAndStage()
+            }
+        case .ready:
+            MenuRow(icon: "checkmark.circle.fill", title: "Install & relaunch") {
+                checker.installStagedUpdate()
+            }
+        case .downloading(let p):
+            HStack(spacing: 10) {
+                ProgressView().controlSize(.mini)
+                Text("Downloading update — \(Int(p * 100))%")
+                    .font(Theme.Typography.body)
+                    .foregroundStyle(Theme.Colors.textSecondary)
+                Spacer()
+            }
+            .padding(.horizontal, 8).padding(.vertical, 6)
+        default:
+            MenuRow(icon: "arrow.clockwise", title: "Check for updates") {
+                checker.checkNow()
+            }
+        }
     }
 
     private func select(_ section: SidebarSection) {
