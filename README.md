@@ -18,3 +18,59 @@ A native macOS app (SwiftUI) for visibility and control over your Claude Code wo
 - **Menu-bar popover** — tap a tab in the menu bar to deep-link to it in the main window.
 - **Content search** — full-text search across every JSONL transcript, not just project names.
 - **Git integration** — current branch and dirty-tree indicator on every session row.
+
+## Install
+
+One-liner (downloads the latest release and drops it into `/Applications`):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/starc007/claude-command-center/main/Scripts/remote-install.sh | bash
+```
+
+Or grab `ClaudeCommandCenter.dmg` from the [latest release](https://github.com/starc007/claude-command-center/releases/latest) and drag the app into `/Applications`. Requires macOS 14 (Sonoma) or newer.
+
+## Local development
+
+Requirements: macOS 14+, Xcode 15+ (for the Swift 5.9+ toolchain).
+
+```bash
+git clone https://github.com/starc007/claude-command-center.git
+cd claude-command-center
+
+# Dev loop — build and run from the terminal
+swift build
+./.build/debug/ClaudeCommandCenter
+
+# Release build
+swift build -c release
+
+# Install a freshly-built .app into /Applications (runs codesign + Info.plist packaging)
+bash Scripts/install.sh
+
+# Regenerate the app icon (Resources/AppIcon.icns)
+bash Scripts/build-icon.sh
+
+# Package .zip + .dmg for distribution (writes to dist/)
+bash Scripts/release.sh
+
+# Cut a GitHub release for the current version
+VERSION=1.1.0 bash Scripts/release.sh
+gh release create v1.1.0 dist/* --generate-notes
+```
+
+Source layout:
+
+```
+Sources/ClaudeCommandCenter/
+  App/         # @main entry, AppDelegate, AppState
+  Models/      # Session, PortInfo, MCPServer, TokenUsage, ...
+  Services/    # SessionReader, PortManager, CostTracker, MCPManager,
+               # GitService, TerminalLauncher, MCPLogReader, IdleSessionWatcher, ...
+  Views/       # Sidebar sections + AddMCPServerSheet
+  Components/  # GlassCard, StatusDot, AnimatedCounter
+  MenuBar/     # Menu-bar popover
+  Theme/       # Colors, Typography, Animations
+```
+
+No external dependencies — the project is pure `Package.swift` SPM against Foundation, AppKit, SwiftUI, Charts, and UserNotifications.
+
