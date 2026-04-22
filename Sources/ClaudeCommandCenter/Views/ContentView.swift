@@ -50,7 +50,7 @@ struct ContentView: View {
         case .sessions: SessionListView()
         case .ports:    PortManagerView()
         case .cost:     CostTrackerView()
-        case .mcp:      PlaceholderView(title: "MCP Servers", subtitle: "Configured MCP servers + status")
+        case .mcp:      MCPManagerView()
         case .none:     PlaceholderView(title: "Welcome",  subtitle: "Select a section to get started")
         }
     }
