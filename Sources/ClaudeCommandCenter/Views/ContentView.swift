@@ -49,7 +49,7 @@ struct ContentView: View {
         switch selection {
         case .sessions: SessionListView()
         case .ports:    PortManagerView()
-        case .cost:     PlaceholderView(title: "Cost",     subtitle: "Token usage + trends")
+        case .cost:     CostTrackerView()
         case .mcp:      PlaceholderView(title: "MCP Servers", subtitle: "Configured MCP servers + status")
         case .none:     PlaceholderView(title: "Welcome",  subtitle: "Select a section to get started")
         }
